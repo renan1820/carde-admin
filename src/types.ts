@@ -6,7 +6,7 @@ export interface Vehicle {
   category: string;
   shortDescription: string;
   fullHistory: string;
-  imageUrl: string;
+  imageUrls: string[];
   engineSoundUrl?: string;
   specs: Record<string, string>;
 }
@@ -34,7 +34,7 @@ export interface VehicleRequest {
   category: VehicleCategory;
   shortDescription: string;
   fullHistory: string;
-  imageUrl: string;
+  imageUrls: string[];
   engineSoundUrl?: string;
   specs: { key: string; value: string; sortOrder: number }[];
 }

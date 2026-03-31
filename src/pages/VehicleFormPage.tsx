@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { createVehicle, updateVehicle } from '../api/vehicles';
+import { uploadImage } from '../api/cloudinary';
 import type { Vehicle, VehicleCategory, VehicleRequest } from '../types';
 import Spinner from '../components/Spinner';
 
@@ -25,7 +26,7 @@ export default function VehicleFormPage() {
   const [category, setCategory] = useState<VehicleCategory>((existing?.category as VehicleCategory) ?? 'car');
   const [shortDescription, setShortDescription] = useState(existing?.shortDescription ?? '');
   const [fullHistory, setFullHistory] = useState(existing?.fullHistory ?? '');
-  const [imageUrl, setImageUrl] = useState(existing?.imageUrl ?? '');
+  const [imageUrls, setImageUrls] = useState<string[]>(existing?.imageUrls ?? []);
   const [engineSoundUrl, setEngineSoundUrl] = useState(existing?.engineSoundUrl ?? '');
   const [specs, setSpecs] = useState<SpecRow[]>(() => {
     if (!existing?.specs) return [];
@@ -33,20 +34,43 @@ export default function VehicleFormPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function addSpec() { setSpecs(s => [...s, { key: '', value: '' }]); }
   function removeSpec(i: number) { setSpecs(s => s.filter((_, idx) => idx !== i)); }
   function updateSpec(i: number, field: 'key' | 'value', val: string) {
     setSpecs(s => s.map((row, idx) => idx === i ? { ...row, [field]: val } : row));
   }
+  function removeImage(i: number) { setImageUrls(u => u.filter((_, idx) => idx !== i)); }
+
+  async function handleFilesSelected(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    e.target.value = '';
+    setUploading(true);
+    setError('');
+    try {
+      const uploaded = await Promise.all(files.map(f => uploadImage(f)));
+      setImageUrls(prev => [...prev, ...uploaded]);
+    } catch {
+      setError('Erro ao fazer upload da imagem. Verifique as configurações do Cloudinary.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (imageUrls.length === 0) {
+      setError('Adicione ao menos uma foto do veículo.');
+      return;
+    }
     setError('');
     setLoading(true);
     const req: VehicleRequest = {
       name, brand, year: parseInt(year), category,
-      shortDescription, fullHistory, imageUrl,
+      shortDescription, fullHistory, imageUrls,
       engineSoundUrl: engineSoundUrl || undefined,
       specs: specs.filter(s => s.key.trim()).map((s, i) => ({ key: s.key, value: s.value, sortOrder: i })),
     };
@@ -99,9 +123,59 @@ export default function VehicleFormPage() {
           <Field label="Histórico completo *">
             <textarea value={fullHistory} onChange={e => setFullHistory(e.target.value)} required rows={5} style={{ ...input, resize: 'vertical' }} disabled={loading} />
           </Field>
-          <Field label="URL da imagem *">
-            <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} required style={input} placeholder="https://..." disabled={loading} />
-          </Field>
+
+          {/* ── Fotos ── */}
+          <div style={photoSection}>
+            <div style={photoHeader}>
+              <span style={sectionLabel}>Fotos do veículo *</span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={btnAddPhoto}
+                disabled={loading || uploading}
+              >
+                {uploading ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Spinner size={14} /> Enviando...
+                  </span>
+                ) : '+ Adicionar fotos'}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleFilesSelected}
+              />
+            </div>
+
+            {imageUrls.length === 0 && !uploading && (
+              <p style={emptyPhotos}>Nenhuma foto adicionada. Adicione ao menos uma.</p>
+            )}
+
+            <div style={photoGrid}>
+              {imageUrls.map((url, i) => (
+                <div key={url + i} style={photoThumb}>
+                  <img src={url} alt={`Foto ${i + 1}`} style={thumbImg} />
+                  {i === 0 && <span style={capaBadge}>Capa</span>}
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    style={btnRemovePhoto}
+                    disabled={loading}
+                    title="Remover foto"
+                  >×</button>
+                </div>
+              ))}
+              {uploading && (
+                <div style={{ ...photoThumb, ...uploadingThumb }}>
+                  <Spinner size={28} />
+                </div>
+              )}
+            </div>
+          </div>
+
           <Field label="URL do som do motor (opcional)">
             <input value={engineSoundUrl} onChange={e => setEngineSoundUrl(e.target.value)} style={input} placeholder="https://..." disabled={loading} />
           </Field>
@@ -121,7 +195,7 @@ export default function VehicleFormPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-            <button type="submit" disabled={loading} style={btnSubmit}>
+            <button type="submit" disabled={loading || uploading} style={btnSubmit}>
               {loading ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Spinner size={16} color="#fff" />
@@ -160,8 +234,18 @@ const formStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column
 const row: React.CSSProperties = { display: 'flex', gap: 16 };
 const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#4a5568' };
 const input: React.CSSProperties = { padding: '9px 12px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 14, width: '100%', boxSizing: 'border-box' };
-const specsSection: React.CSSProperties = { borderTop: '1px solid #e2e8f0', paddingTop: 16 };
+const photoSection: React.CSSProperties = { borderTop: '1px solid #e2e8f0', paddingTop: 16 };
+const photoHeader: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 };
 const sectionLabel: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#4a5568' };
+const btnAddPhoto: React.CSSProperties = { padding: '6px 14px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 500 };
+const emptyPhotos: React.CSSProperties = { fontSize: 13, color: '#a0aec0', margin: '8px 0' };
+const photoGrid: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 10 };
+const photoThumb: React.CSSProperties = { position: 'relative', width: 90, height: 90, borderRadius: 6, overflow: 'hidden', border: '1px solid #e2e8f0' };
+const uploadingThumb: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7fafc' };
+const thumbImg: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover' };
+const capaBadge: React.CSSProperties = { position: 'absolute', top: 4, left: 4, background: '#1a202c', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 3 };
+const btnRemovePhoto: React.CSSProperties = { position: 'absolute', top: 2, right: 2, width: 20, height: 20, border: 'none', borderRadius: '50%', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer', fontSize: 14, lineHeight: '20px', textAlign: 'center', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const specsSection: React.CSSProperties = { borderTop: '1px solid #e2e8f0', paddingTop: 16 };
 const btnAddSpec: React.CSSProperties = { padding: '5px 12px', borderRadius: 5, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 13 };
 const specRow: React.CSSProperties = { display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' };
 const btnRemoveSpec: React.CSSProperties = { padding: '6px 10px', borderRadius: 5, border: 'none', background: '#fff5f5', color: '#e53e3e', cursor: 'pointer', fontSize: 16, lineHeight: 1 };
