@@ -72,7 +72,7 @@ export default function VehicleFormPage() {
       name, brand, year: parseInt(year), category,
       shortDescription, fullHistory, imageUrls,
       engineSoundUrl: engineSoundUrl || undefined,
-      specs: Object.fromEntries(specs.filter(s => s.key.trim()).map(s => [s.key, s.value])),
+      specs: specs.filter(s => s.key.trim()).map((s, i) => ({ key: s.key, value: s.value, sortOrder: i })),
     };
     try {
       if (isEdit) {
@@ -81,8 +81,9 @@ export default function VehicleFormPage() {
         await createVehicle(req);
       }
       navigate('/vehicles');
-    } catch {
-      setError('Erro ao salvar veículo. Verifique os dados e tente novamente.');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      setError(status ? `Erro ao salvar veículo (HTTP ${status}).` : 'Erro ao salvar veículo. Sem resposta do servidor.');
     } finally {
       setLoading(false);
     }
