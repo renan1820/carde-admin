@@ -27,7 +27,7 @@ export default function LoginPage({ onLogin }: Props) {
       if (status === 401) {
         setError('E-mail ou senha incorretos.');
       } else if (!status) {
-        setError('Erro de conexão — verifique o console (F12 → Network).');
+        setError('Sem resposta do servidor. Tente novamente.');
       } else {
         setError(`Erro inesperado: ${status}`);
       }
@@ -39,24 +39,35 @@ export default function LoginPage({ onLogin }: Props) {
   return (
     <div style={page}>
       <div style={card}>
-        <h1 style={title}>CARDE</h1>
-        <p style={subtitle}>Painel de Gestão</p>
+        <div style={logoWrap}>
+          <span style={logoText}>CARDE</span>
+          <span style={logoSub}>GESTÃO</span>
+        </div>
+
         <form onSubmit={handleSubmit} style={form}>
-          <label style={labelStyle}>E-mail</label>
-          <input
-            type="email" value={email} onChange={e => setEmail(e.target.value)}
-            required style={inputStyle} autoFocus disabled={loading}
-          />
-          <label style={labelStyle}>Senha</label>
-          <input
-            type="password" value={password} onChange={e => setPassword(e.target.value)}
-            required style={inputStyle} disabled={loading}
-          />
+          <div style={fieldWrap}>
+            <label style={labelStyle}>E-mail</label>
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)}
+              required style={inputStyle} autoFocus disabled={loading}
+              placeholder="admin@carde.com.br"
+            />
+          </div>
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Senha</label>
+            <input
+              type="password" value={password} onChange={e => setPassword(e.target.value)}
+              required style={inputStyle} disabled={loading}
+              placeholder="••••••••"
+            />
+          </div>
+
           {error && <p style={errorStyle}>{error}</p>}
+
           <button type="submit" disabled={loading} style={btnStyle}>
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-                <Spinner size={18} color="#fff" />
+                <Spinner size={17} color="#000" />
                 Entrando...
               </span>
             ) : 'Entrar'}
@@ -69,26 +80,56 @@ export default function LoginPage({ onLogin }: Props) {
 
 const page: React.CSSProperties = {
   minHeight: '100vh', display: 'flex', alignItems: 'center',
-  justifyContent: 'center', background: '#f7fafc',
+  justifyContent: 'center', background: '#000',
 };
+
 const card: React.CSSProperties = {
-  background: '#fff', borderRadius: 12, padding: '40px 40px',
-  width: 360, boxShadow: '0 2px 16px rgba(0,0,0,0.08)',
+  width: 380, padding: '44px 40px',
+  background: '#0f0f0f',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 4,
 };
-const title: React.CSSProperties = { margin: 0, fontSize: 28, fontWeight: 700, color: '#1a202c', letterSpacing: 2 };
-const subtitle: React.CSSProperties = { margin: '4px 0 28px', color: '#718096', fontSize: 14 };
-const form: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4 };
-const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#4a5568', marginTop: 12 };
+
+const logoWrap: React.CSSProperties = { marginBottom: 36 };
+
+const logoText: React.CSSProperties = {
+  display: 'block',
+  fontFamily: "'Big Shoulders Display', cursive",
+  fontSize: 36, fontWeight: 900, letterSpacing: 4,
+  color: '#fff', lineHeight: 1,
+};
+
+const logoSub: React.CSSProperties = {
+  display: 'block',
+  fontFamily: "'IBM Plex Sans', sans-serif",
+  fontSize: 10, fontWeight: 500, letterSpacing: 5,
+  color: '#D4A843', marginTop: 4, textTransform: 'uppercase',
+};
+
+const form: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 16 };
+const fieldWrap: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 6 };
+const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 500, letterSpacing: 0.5, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase' };
+
 const inputStyle: React.CSSProperties = {
-  padding: '10px 12px', borderRadius: 6, border: '1px solid #e2e8f0',
-  fontSize: 14, outline: 'none', marginTop: 4,
+  padding: '11px 14px', borderRadius: 4,
+  border: '1px solid rgba(255,255,255,0.1)',
+  background: 'rgba(255,255,255,0.04)',
+  color: '#fff', fontSize: 14, outline: 'none',
 };
+
 const btnStyle: React.CSSProperties = {
-  marginTop: 24, padding: '11px', borderRadius: 6, border: 'none',
-  background: '#1a202c', color: '#fff', fontSize: 15, fontWeight: 600,
-  cursor: 'pointer', minHeight: 44,
+  marginTop: 8, padding: '12px',
+  borderRadius: 4, border: 'none',
+  background: '#fff', color: '#000',
+  fontSize: 14, fontWeight: 700, letterSpacing: 0.5,
+  cursor: 'pointer', minHeight: 46,
+  transition: 'background 0.15s',
 };
+
 const errorStyle: React.CSSProperties = {
-  color: '#e53e3e', fontSize: 13, margin: '8px 0 0', padding: '8px 12px',
-  background: '#fff5f5', borderRadius: 6,
+  color: '#ef4444', fontSize: 13,
+  padding: '10px 14px',
+  background: 'rgba(239,68,68,0.08)',
+  border: '1px solid rgba(239,68,68,0.2)',
+  borderRadius: 4,
 };

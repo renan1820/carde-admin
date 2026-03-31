@@ -6,7 +6,7 @@ import Spinner from '../components/Spinner';
 
 function toDatetimeLocal(iso: string) {
   if (!iso) return '';
-  return iso.slice(0, 16); // "2025-06-15T10:00"
+  return iso.slice(0, 16);
 }
 
 export default function EventFormPage() {
@@ -34,11 +34,8 @@ export default function EventFormPage() {
       imageUrl, featured,
     };
     try {
-      if (isEdit) {
-        await updateEvent(id!, req);
-      } else {
-        await createEvent(req);
-      }
+      if (isEdit) await updateEvent(id!, req);
+      else await createEvent(req);
       navigate('/events');
     } catch {
       setError('Erro ao salvar evento. Verifique os dados e tente novamente.');
@@ -70,17 +67,17 @@ export default function EventFormPage() {
           <Field label="URL da imagem *">
             <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} required style={input} placeholder="https://..." disabled={loading} />
           </Field>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <input type="checkbox" id="featured" checked={featured} onChange={e => setFeatured(e.target.checked)} style={{ width: 16, height: 16, cursor: 'pointer' }} disabled={loading} />
-            <label htmlFor="featured" style={labelStyle}>Exibir em destaque no app</label>
+            <label htmlFor="featured" style={checkLabel}>Exibir em destaque no app</label>
           </div>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <button type="submit" disabled={loading} style={btnSubmit}>
               {loading ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Spinner size={16} color="#fff" />
-                  Salvando...
+                  <Spinner size={16} color="#000" /> Salvando...
                 </span>
               ) : (isEdit ? 'Salvar alterações' : 'Criar evento')}
             </button>
@@ -90,8 +87,8 @@ export default function EventFormPage() {
 
         {loading && (
           <div style={formOverlay}>
-            <Spinner size={40} />
-            <span style={{ marginTop: 16, color: '#4a5568', fontSize: 14, fontWeight: 500 }}>Salvando evento...</span>
+            <Spinner size={36} color="#fff" />
+            <span style={{ marginTop: 16, color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Salvando evento...</span>
           </div>
         )}
       </div>
@@ -101,7 +98,7 @@ export default function EventFormPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <label style={labelStyle}>{label}</label>
       {children}
     </div>
@@ -109,16 +106,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const header: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 };
-const pageTitle: React.CSSProperties = { margin: 0, fontSize: 22, fontWeight: 700, color: '#1a202c' };
-const btnBack: React.CSSProperties = { background: 'transparent', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 14 };
-const formStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 16, background: '#fff', padding: 28, borderRadius: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' };
-const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#4a5568' };
-const input: React.CSSProperties = { padding: '9px 12px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 14, width: '100%', boxSizing: 'border-box' };
-const btnSubmit: React.CSSProperties = { padding: '10px 24px', background: '#1a202c', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, minHeight: 42 };
-const btnCancel: React.CSSProperties = { padding: '10px 24px', background: '#fff', color: '#4a5568', border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', fontSize: 14 };
-const errorStyle: React.CSSProperties = { color: '#e53e3e', background: '#fff5f5', padding: '10px 16px', borderRadius: 6, marginBottom: 16 };
-const formOverlay: React.CSSProperties = {
-  position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.82)',
-  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-  borderRadius: 8, zIndex: 10,
-};
+const pageTitle: React.CSSProperties = { margin: 0, fontFamily: "'Big Shoulders Display', cursive", fontSize: 28, fontWeight: 700, letterSpacing: 1, color: '#fff' };
+const btnBack: React.CSSProperties = { background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 14 };
+const formStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 16, background: '#0f0f0f', padding: 28, borderRadius: 4, border: '1px solid rgba(255,255,255,0.07)' };
+const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, letterSpacing: 1, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' };
+const checkLabel: React.CSSProperties = { fontSize: 14, color: 'rgba(255,255,255,0.6)', cursor: 'pointer' };
+const input: React.CSSProperties = { padding: '10px 12px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' };
+const btnSubmit: React.CSSProperties = { padding: '11px 28px', background: '#fff', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 14, fontWeight: 700, minHeight: 44, letterSpacing: 0.3 };
+const btnCancel: React.CSSProperties = { padding: '11px 24px', background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, cursor: 'pointer', fontSize: 14 };
+const errorStyle: React.CSSProperties = { color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', padding: '10px 16px', borderRadius: 4, marginBottom: 20, fontSize: 14 };
+const formOverlay: React.CSSProperties = { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 4, zIndex: 10 };

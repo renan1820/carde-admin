@@ -53,8 +53,9 @@ export default function VehicleFormPage() {
     try {
       const uploaded = await Promise.all(files.map(f => uploadImage(f)));
       setImageUrls(prev => [...prev, ...uploaded]);
-    } catch {
-      setError('Erro ao fazer upload da imagem. Verifique as configurações do Cloudinary.');
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message ?? 'Erro ao fazer upload.';
+      setError(`Upload falhou: ${msg}`);
     } finally {
       setUploading(false);
     }
@@ -75,11 +76,8 @@ export default function VehicleFormPage() {
       specs: specs.filter(s => s.key.trim()).map((s, i) => ({ key: s.key, value: s.value, sortOrder: i })),
     };
     try {
-      if (isEdit) {
-        await updateVehicle(id!, req);
-      } else {
-        await createVehicle(req);
-      }
+      if (isEdit) await updateVehicle(id!, req);
+      else await createVehicle(req);
       navigate('/vehicles');
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } })?.response?.status;
@@ -100,6 +98,7 @@ export default function VehicleFormPage() {
 
       <div style={{ position: 'relative' }}>
         <form onSubmit={handleSubmit} style={formStyle}>
+
           <div style={row}>
             <Field label="Nome *">
               <input value={name} onChange={e => setName(e.target.value)} required style={input} disabled={loading} />
@@ -108,6 +107,7 @@ export default function VehicleFormPage() {
               <input value={brand} onChange={e => setBrand(e.target.value)} required style={input} disabled={loading} />
             </Field>
           </div>
+
           <div style={row}>
             <Field label="Ano *">
               <input type="number" value={year} onChange={e => setYear(e.target.value)} required min={1800} max={2100} style={input} disabled={loading} />
@@ -118,60 +118,44 @@ export default function VehicleFormPage() {
               </select>
             </Field>
           </div>
+
           <Field label="Descrição curta *">
             <input value={shortDescription} onChange={e => setShortDescription(e.target.value)} required maxLength={500} style={input} disabled={loading} />
           </Field>
+
           <Field label="Histórico completo *">
             <textarea value={fullHistory} onChange={e => setFullHistory(e.target.value)} required rows={5} style={{ ...input, resize: 'vertical' }} disabled={loading} />
           </Field>
 
           {/* ── Fotos ── */}
-          <div style={photoSection}>
-            <div style={photoHeader}>
+          <div style={sectionWrap}>
+            <div style={sectionHeader}>
               <span style={sectionLabel}>Fotos do veículo *</span>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                style={btnAddPhoto}
-                disabled={loading || uploading}
-              >
+              <button type="button" onClick={() => fileInputRef.current?.click()} style={btnAddPhoto} disabled={loading || uploading}>
                 {uploading ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Spinner size={14} /> Enviando...
+                    <Spinner size={13} color="#fff" /> Enviando...
                   </span>
                 ) : '+ Adicionar fotos'}
               </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                style={{ display: 'none' }}
-                onChange={handleFilesSelected}
-              />
+              <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFilesSelected} />
             </div>
 
             {imageUrls.length === 0 && !uploading && (
-              <p style={emptyPhotos}>Nenhuma foto adicionada. Adicione ao menos uma.</p>
+              <p style={emptyMsg}>Nenhuma foto adicionada. Adicione ao menos uma.</p>
             )}
 
             <div style={photoGrid}>
               {imageUrls.map((url, i) => (
                 <div key={url + i} style={photoThumb}>
                   <img src={url} alt={`Foto ${i + 1}`} style={thumbImg} />
-                  {i === 0 && <span style={capaBadge}>Capa</span>}
-                  <button
-                    type="button"
-                    onClick={() => removeImage(i)}
-                    style={btnRemovePhoto}
-                    disabled={loading}
-                    title="Remover foto"
-                  >×</button>
+                  {i === 0 && <span style={capaBadge}>CAPA</span>}
+                  <button type="button" onClick={() => removeImage(i)} style={btnRemovePhoto} disabled={loading} title="Remover foto">×</button>
                 </div>
               ))}
               {uploading && (
                 <div style={{ ...photoThumb, ...uploadingThumb }}>
-                  <Spinner size={28} />
+                  <Spinner size={24} color="rgba(255,255,255,0.5)" />
                 </div>
               )}
             </div>
@@ -181,7 +165,8 @@ export default function VehicleFormPage() {
             <input value={engineSoundUrl} onChange={e => setEngineSoundUrl(e.target.value)} style={input} placeholder="https://..." disabled={loading} />
           </Field>
 
-          <div style={specsSection}>
+          {/* ── Specs ── */}
+          <div style={sectionWrap}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <span style={sectionLabel}>Especificações técnicas</span>
               <button type="button" onClick={addSpec} style={btnAddSpec} disabled={loading}>+ Adicionar</button>
@@ -199,8 +184,7 @@ export default function VehicleFormPage() {
             <button type="submit" disabled={loading || uploading} style={btnSubmit}>
               {loading ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Spinner size={16} color="#fff" />
-                  Salvando...
+                  <Spinner size={16} color="#000" /> Salvando...
                 </span>
               ) : (isEdit ? 'Salvar alterações' : 'Criar veículo')}
             </button>
@@ -210,8 +194,8 @@ export default function VehicleFormPage() {
 
         {loading && (
           <div style={formOverlay}>
-            <Spinner size={40} />
-            <span style={{ marginTop: 16, color: '#4a5568', fontSize: 14, fontWeight: 500 }}>Salvando veículo...</span>
+            <Spinner size={36} color="#fff" />
+            <span style={{ marginTop: 16, color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Salvando veículo...</span>
           </div>
         )}
       </div>
@@ -221,7 +205,7 @@ export default function VehicleFormPage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
       <label style={labelStyle}>{label}</label>
       {children}
     </div>
@@ -229,32 +213,27 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const header: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 };
-const pageTitle: React.CSSProperties = { margin: 0, fontSize: 22, fontWeight: 700, color: '#1a202c' };
-const btnBack: React.CSSProperties = { background: 'transparent', border: 'none', color: '#4a5568', cursor: 'pointer', fontSize: 14 };
-const formStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 16, background: '#fff', padding: 28, borderRadius: 8, boxShadow: '0 1px 6px rgba(0,0,0,0.06)' };
+const pageTitle: React.CSSProperties = { margin: 0, fontFamily: "'Big Shoulders Display', cursive", fontSize: 28, fontWeight: 700, letterSpacing: 1, color: '#fff' };
+const btnBack: React.CSSProperties = { background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 14 };
+const formStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 16, background: '#0f0f0f', padding: 28, borderRadius: 4, border: '1px solid rgba(255,255,255,0.07)' };
 const row: React.CSSProperties = { display: 'flex', gap: 16 };
-const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#4a5568' };
-const input: React.CSSProperties = { padding: '9px 12px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 14, width: '100%', boxSizing: 'border-box' };
-const photoSection: React.CSSProperties = { borderTop: '1px solid #e2e8f0', paddingTop: 16 };
-const photoHeader: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 };
-const sectionLabel: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: '#4a5568' };
-const btnAddPhoto: React.CSSProperties = { padding: '6px 14px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 500 };
-const emptyPhotos: React.CSSProperties = { fontSize: 13, color: '#a0aec0', margin: '8px 0' };
+const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, letterSpacing: 1, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' };
+const input: React.CSSProperties = { padding: '10px 12px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' };
+const sectionWrap: React.CSSProperties = { borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 16 };
+const sectionHeader: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 };
+const sectionLabel: React.CSSProperties = { fontSize: 11, fontWeight: 600, letterSpacing: 1, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' };
+const btnAddPhoto: React.CSSProperties = { padding: '6px 14px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#fff' };
+const emptyMsg: React.CSSProperties = { fontSize: 13, color: 'rgba(255,255,255,0.2)', margin: '4px 0 8px' };
 const photoGrid: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 10 };
-const photoThumb: React.CSSProperties = { position: 'relative', width: 90, height: 90, borderRadius: 6, overflow: 'hidden', border: '1px solid #e2e8f0' };
-const uploadingThumb: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7fafc' };
+const photoThumb: React.CSSProperties = { position: 'relative', width: 90, height: 68, borderRadius: 4, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' };
+const uploadingThumb: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.03)' };
 const thumbImg: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover' };
-const capaBadge: React.CSSProperties = { position: 'absolute', top: 4, left: 4, background: '#1a202c', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 3 };
-const btnRemovePhoto: React.CSSProperties = { position: 'absolute', top: 2, right: 2, width: 20, height: 20, border: 'none', borderRadius: '50%', background: 'rgba(0,0,0,0.55)', color: '#fff', cursor: 'pointer', fontSize: 14, lineHeight: '20px', textAlign: 'center', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' };
-const specsSection: React.CSSProperties = { borderTop: '1px solid #e2e8f0', paddingTop: 16 };
-const btnAddSpec: React.CSSProperties = { padding: '5px 12px', borderRadius: 5, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 13 };
+const capaBadge: React.CSSProperties = { position: 'absolute', top: 4, left: 4, background: '#D4A843', color: '#000', fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: 0.5 };
+const btnRemovePhoto: React.CSSProperties = { position: 'absolute', top: 3, right: 3, width: 20, height: 20, border: 'none', borderRadius: '50%', background: 'rgba(0,0,0,0.7)', color: '#fff', cursor: 'pointer', fontSize: 14, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 };
+const btnAddSpec: React.CSSProperties = { padding: '5px 12px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', cursor: 'pointer', fontSize: 13, color: 'rgba(255,255,255,0.6)' };
 const specRow: React.CSSProperties = { display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' };
-const btnRemoveSpec: React.CSSProperties = { padding: '6px 10px', borderRadius: 5, border: 'none', background: '#fff5f5', color: '#e53e3e', cursor: 'pointer', fontSize: 16, lineHeight: 1 };
-const btnSubmit: React.CSSProperties = { padding: '10px 24px', background: '#1a202c', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, minHeight: 42 };
-const btnCancel: React.CSSProperties = { padding: '10px 24px', background: '#fff', color: '#4a5568', border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', fontSize: 14 };
-const errorStyle: React.CSSProperties = { color: '#e53e3e', background: '#fff5f5', padding: '10px 16px', borderRadius: 6, marginBottom: 16 };
-const formOverlay: React.CSSProperties = {
-  position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.82)',
-  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-  borderRadius: 8, zIndex: 10,
-};
+const btnRemoveSpec: React.CSSProperties = { padding: '6px 10px', borderRadius: 4, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', cursor: 'pointer', fontSize: 15, lineHeight: 1 };
+const btnSubmit: React.CSSProperties = { padding: '11px 28px', background: '#fff', color: '#000', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 14, fontWeight: 700, minHeight: 44, letterSpacing: 0.3 };
+const btnCancel: React.CSSProperties = { padding: '11px 24px', background: 'transparent', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, cursor: 'pointer', fontSize: 14 };
+const errorStyle: React.CSSProperties = { color: '#ef4444', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', padding: '10px 16px', borderRadius: 4, marginBottom: 20, fontSize: 14 };
+const formOverlay: React.CSSProperties = { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 4, zIndex: 10 };
