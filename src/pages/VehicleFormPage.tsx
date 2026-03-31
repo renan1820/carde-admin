@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { createVehicle, updateVehicle } from '../api/vehicles';
 import type { Vehicle, VehicleCategory, VehicleRequest } from '../types';
+import Spinner from '../components/Spinner';
 
 const CATEGORIES: VehicleCategory[] = ['car', 'motorcycle', 'truck', 'bus', 'racing', 'classic'];
 const CATEGORY_LABELS: Record<VehicleCategory, string> = {
@@ -67,64 +68,78 @@ export default function VehicleFormPage() {
     <div style={{ maxWidth: 720 }}>
       <div style={header}>
         <h2 style={pageTitle}>{isEdit ? 'Editar Veículo' : 'Novo Veículo'}</h2>
-        <button onClick={() => navigate('/vehicles')} style={btnBack}>← Voltar</button>
+        <button onClick={() => navigate('/vehicles')} style={btnBack} disabled={loading}>← Voltar</button>
       </div>
 
       {error && <p style={errorStyle}>{error}</p>}
 
-      <form onSubmit={handleSubmit} style={formStyle}>
-        <div style={row}>
-          <Field label="Nome *">
-            <input value={name} onChange={e => setName(e.target.value)} required style={input} />
-          </Field>
-          <Field label="Marca *">
-            <input value={brand} onChange={e => setBrand(e.target.value)} required style={input} />
-          </Field>
-        </div>
-        <div style={row}>
-          <Field label="Ano *">
-            <input type="number" value={year} onChange={e => setYear(e.target.value)} required min={1800} max={2100} style={input} />
-          </Field>
-          <Field label="Categoria *">
-            <select value={category} onChange={e => setCategory(e.target.value as VehicleCategory)} style={input}>
-              {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
-            </select>
-          </Field>
-        </div>
-        <Field label="Descrição curta *">
-          <input value={shortDescription} onChange={e => setShortDescription(e.target.value)} required maxLength={500} style={input} />
-        </Field>
-        <Field label="Histórico completo *">
-          <textarea value={fullHistory} onChange={e => setFullHistory(e.target.value)} required rows={5} style={{ ...input, resize: 'vertical' }} />
-        </Field>
-        <Field label="URL da imagem *">
-          <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} required style={input} placeholder="https://..." />
-        </Field>
-        <Field label="URL do som do motor (opcional)">
-          <input value={engineSoundUrl} onChange={e => setEngineSoundUrl(e.target.value)} style={input} placeholder="https://..." />
-        </Field>
-
-        <div style={specsSection}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <span style={sectionLabel}>Especificações técnicas</span>
-            <button type="button" onClick={addSpec} style={btnAddSpec}>+ Adicionar</button>
+      <div style={{ position: 'relative' }}>
+        <form onSubmit={handleSubmit} style={formStyle}>
+          <div style={row}>
+            <Field label="Nome *">
+              <input value={name} onChange={e => setName(e.target.value)} required style={input} disabled={loading} />
+            </Field>
+            <Field label="Marca *">
+              <input value={brand} onChange={e => setBrand(e.target.value)} required style={input} disabled={loading} />
+            </Field>
           </div>
-          {specs.map((s, i) => (
-            <div key={i} style={specRow}>
-              <input value={s.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Chave (ex: Motor)" style={{ ...input, flex: 1 }} />
-              <input value={s.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Valor (ex: V8 5.0)" style={{ ...input, flex: 2 }} />
-              <button type="button" onClick={() => removeSpec(i)} style={btnRemoveSpec}>×</button>
-            </div>
-          ))}
-        </div>
+          <div style={row}>
+            <Field label="Ano *">
+              <input type="number" value={year} onChange={e => setYear(e.target.value)} required min={1800} max={2100} style={input} disabled={loading} />
+            </Field>
+            <Field label="Categoria *">
+              <select value={category} onChange={e => setCategory(e.target.value as VehicleCategory)} style={input} disabled={loading}>
+                {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+              </select>
+            </Field>
+          </div>
+          <Field label="Descrição curta *">
+            <input value={shortDescription} onChange={e => setShortDescription(e.target.value)} required maxLength={500} style={input} disabled={loading} />
+          </Field>
+          <Field label="Histórico completo *">
+            <textarea value={fullHistory} onChange={e => setFullHistory(e.target.value)} required rows={5} style={{ ...input, resize: 'vertical' }} disabled={loading} />
+          </Field>
+          <Field label="URL da imagem *">
+            <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} required style={input} placeholder="https://..." disabled={loading} />
+          </Field>
+          <Field label="URL do som do motor (opcional)">
+            <input value={engineSoundUrl} onChange={e => setEngineSoundUrl(e.target.value)} style={input} placeholder="https://..." disabled={loading} />
+          </Field>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-          <button type="submit" disabled={loading} style={btnSubmit}>
-            {loading ? 'Salvando...' : (isEdit ? 'Salvar alterações' : 'Criar veículo')}
-          </button>
-          <button type="button" onClick={() => navigate('/vehicles')} style={btnCancel}>Cancelar</button>
-        </div>
-      </form>
+          <div style={specsSection}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={sectionLabel}>Especificações técnicas</span>
+              <button type="button" onClick={addSpec} style={btnAddSpec} disabled={loading}>+ Adicionar</button>
+            </div>
+            {specs.map((s, i) => (
+              <div key={i} style={specRow}>
+                <input value={s.key} onChange={e => updateSpec(i, 'key', e.target.value)} placeholder="Chave (ex: Motor)" style={{ ...input, flex: 1 }} disabled={loading} />
+                <input value={s.value} onChange={e => updateSpec(i, 'value', e.target.value)} placeholder="Valor (ex: V8 5.0)" style={{ ...input, flex: 2 }} disabled={loading} />
+                <button type="button" onClick={() => removeSpec(i)} style={btnRemoveSpec} disabled={loading}>×</button>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+            <button type="submit" disabled={loading} style={btnSubmit}>
+              {loading ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Spinner size={16} color="#fff" />
+                  Salvando...
+                </span>
+              ) : (isEdit ? 'Salvar alterações' : 'Criar veículo')}
+            </button>
+            <button type="button" onClick={() => navigate('/vehicles')} style={btnCancel} disabled={loading}>Cancelar</button>
+          </div>
+        </form>
+
+        {loading && (
+          <div style={formOverlay}>
+            <Spinner size={40} />
+            <span style={{ marginTop: 16, color: '#4a5568', fontSize: 14, fontWeight: 500 }}>Salvando veículo...</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -150,6 +165,11 @@ const sectionLabel: React.CSSProperties = { fontSize: 13, fontWeight: 600, color
 const btnAddSpec: React.CSSProperties = { padding: '5px 12px', borderRadius: 5, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 13 };
 const specRow: React.CSSProperties = { display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' };
 const btnRemoveSpec: React.CSSProperties = { padding: '6px 10px', borderRadius: 5, border: 'none', background: '#fff5f5', color: '#e53e3e', cursor: 'pointer', fontSize: 16, lineHeight: 1 };
-const btnSubmit: React.CSSProperties = { padding: '10px 24px', background: '#1a202c', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600 };
+const btnSubmit: React.CSSProperties = { padding: '10px 24px', background: '#1a202c', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600, minHeight: 42 };
 const btnCancel: React.CSSProperties = { padding: '10px 24px', background: '#fff', color: '#4a5568', border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', fontSize: 14 };
 const errorStyle: React.CSSProperties = { color: '#e53e3e', background: '#fff5f5', padding: '10px 16px', borderRadius: 6, marginBottom: 16 };
+const formOverlay: React.CSSProperties = {
+  position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.82)',
+  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+  borderRadius: 8, zIndex: 10,
+};
