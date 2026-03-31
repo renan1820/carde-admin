@@ -21,8 +21,15 @@ export default function LoginPage({ onLogin }: Props) {
       const res = await login(email, password);
       onLogin(res.token);
       navigate('/vehicles');
-    } catch {
-      setError('E-mail ou senha incorretos.');
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        setError('E-mail ou senha incorretos.');
+      } else if (!status) {
+        setError('Erro de conexão — verifique o console (F12 → Network).');
+      } else {
+        setError(`Erro inesperado: ${status}`);
+      }
     } finally {
       setLoading(false);
     }
