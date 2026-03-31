@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listEvents, deleteEvent } from '../api/events';
+import { isNetworkError } from '../api/client';
 import type { MuseumEvent } from '../types';
 import ConfirmDialog from '../components/ConfirmDialog';
+import ConnectionError from '../components/ConnectionError';
 import Spinner from '../components/Spinner';
 
 export default function EventsPage() {
@@ -10,6 +12,7 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+  const [networkError, setNetworkError] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MuseumEvent | null>(null);
   const navigate = useNavigate();
 
@@ -18,9 +21,15 @@ export default function EventsPage() {
   async function load() {
     try {
       setLoading(true);
+      setNetworkError(false);
+      setError('');
       setEvents(await listEvents());
-    } catch {
-      setError('Erro ao carregar eventos.');
+    } catch (err) {
+      if (isNetworkError(err)) {
+        setNetworkError(true);
+      } else {
+        setError('Erro ao carregar eventos.');
+      }
     } finally {
       setLoading(false);
     }
@@ -44,6 +53,8 @@ export default function EventsPage() {
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
+
+  if (networkError) return <ConnectionError onRetry={load} />;
 
   return (
     <div style={{ position: 'relative' }}>

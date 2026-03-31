@@ -36,7 +36,7 @@ export interface VehicleRequest {
   fullHistory: string;
   imageUrls: string[];
   engineSoundUrl?: string;
-  specs: { key: string; value: string; sortOrder: number }[];
+  specs: Record<string, string>;
 }
 
 export interface EventRequest {

@@ -72,7 +72,7 @@ export default function VehicleFormPage() {
       name, brand, year: parseInt(year), category,
       shortDescription, fullHistory, imageUrls,
       engineSoundUrl: engineSoundUrl || undefined,
-      specs: specs.filter(s => s.key.trim()).map((s, i) => ({ key: s.key, value: s.value, sortOrder: i })),
+      specs: Object.fromEntries(specs.filter(s => s.key.trim()).map(s => [s.key, s.value])),
     };
     try {
       if (isEdit) {

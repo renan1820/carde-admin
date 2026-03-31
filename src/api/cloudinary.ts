@@ -9,7 +9,7 @@ export async function uploadImage(file: File): Promise<string> {
     `https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
     { method: 'POST', body: form }
   );
-  if (!res.ok) throw new Error('Upload falhou');
   const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? 'Upload falhou');
   return data.secure_url as string;
 }
