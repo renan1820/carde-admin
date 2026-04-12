@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 interface Props {
@@ -6,14 +7,28 @@ interface Props {
 
 export default function Layout({ onLogout }: Props) {
   const navigate = useNavigate();
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  function handleLogout() {
+  function confirmLogout() {
+    setShowConfirm(false);
     onLogout();
     navigate('/login');
   }
 
   return (
     <div style={root}>
+      {showConfirm && (
+        <div style={overlay}>
+          <div style={dialog}>
+            <p style={dialogTitle}>Sair da conta</p>
+            <p style={dialogBody}>Tem certeza que deseja sair?</p>
+            <div style={dialogActions}>
+              <button onClick={() => setShowConfirm(false)} style={cancelBtn}>Cancelar</button>
+              <button onClick={confirmLogout} style={confirmBtn}>Sair</button>
+            </div>
+          </div>
+        </div>
+      )}
       <aside style={sidebar}>
         <div style={logoWrap}>
           <span style={logoText}>CARDE</span>
@@ -43,7 +58,7 @@ export default function Layout({ onLogout }: Props) {
           </NavLink>
         </nav>
 
-        <button onClick={handleLogout} style={logoutBtn}>
+        <button onClick={() => setShowConfirm(true)} style={logoutBtn}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
@@ -118,4 +133,46 @@ const logoutBtn: React.CSSProperties = {
 const main: React.CSSProperties = {
   flex: 1, padding: '36px 40px',
   background: '#0a0a0a', overflowY: 'auto', minHeight: '100vh',
+};
+
+const overlay: React.CSSProperties = {
+  position: 'fixed', inset: 0,
+  background: 'rgba(0,0,0,0.7)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  zIndex: 1000,
+};
+
+const dialog: React.CSSProperties = {
+  background: '#111', border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 10, padding: '28px 32px', width: 320,
+};
+
+const dialogTitle: React.CSSProperties = {
+  fontFamily: "'IBM Plex Sans', sans-serif",
+  fontSize: 16, fontWeight: 600, color: '#fff',
+  margin: '0 0 8px',
+};
+
+const dialogBody: React.CSSProperties = {
+  fontFamily: "'IBM Plex Sans', sans-serif",
+  fontSize: 14, color: 'rgba(255,255,255,0.5)',
+  margin: '0 0 24px',
+};
+
+const dialogActions: React.CSSProperties = {
+  display: 'flex', justifyContent: 'flex-end', gap: 10,
+};
+
+const cancelBtn: React.CSSProperties = {
+  background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+  color: 'rgba(255,255,255,0.6)', borderRadius: 6,
+  padding: '8px 18px', cursor: 'pointer', fontSize: 13,
+  fontFamily: "'IBM Plex Sans', sans-serif",
+};
+
+const confirmBtn: React.CSSProperties = {
+  background: '#D4A843', border: 'none',
+  color: '#000', borderRadius: 6,
+  padding: '8px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+  fontFamily: "'IBM Plex Sans', sans-serif",
 };
