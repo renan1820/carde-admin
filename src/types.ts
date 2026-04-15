@@ -10,6 +10,7 @@ export interface Vehicle {
   engineSoundUrl?: string;
   specs: Record<string, string>;
   qrCodeImageUrl?: string | null;
+  displayOrder: number;
 }
 
 export interface VehicleQrCode {
@@ -27,6 +28,7 @@ export interface MuseumEvent {
   imageUrl: string;
   isFeatured: boolean;
   externalLink?: string | null;
+  displayOrder: number;
 }
 
 export type VehicleCategory = 'car' | 'motorcycle' | 'truck' | 'bus' | 'racing' | 'classic';
