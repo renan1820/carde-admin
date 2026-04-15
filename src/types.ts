@@ -26,6 +26,7 @@ export interface MuseumEvent {
   date: string;
   imageUrl: string;
   isFeatured: boolean;
+  externalLink?: string | null;
 }
 
 export type VehicleCategory = 'car' | 'motorcycle' | 'truck' | 'bus' | 'racing' | 'classic';
@@ -53,4 +54,5 @@ export interface EventRequest {
   date: string;
   imageUrl: string;
   featured: boolean;
+  externalLink?: string | null;
 }

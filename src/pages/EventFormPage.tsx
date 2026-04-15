@@ -21,6 +21,7 @@ export default function EventFormPage() {
   const [date, setDate] = useState(existing ? toDatetimeLocal(existing.date) : '');
   const [imageUrl, setImageUrl] = useState(existing?.imageUrl ?? '');
   const [featured, setFeatured] = useState(existing?.isFeatured ?? false);
+  const [externalLink, setExternalLink] = useState(existing?.externalLink ?? '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +33,7 @@ export default function EventFormPage() {
       title, description,
       date: new Date(date).toISOString(),
       imageUrl, featured,
+      externalLink: externalLink || null,
     };
     try {
       if (isEdit) await updateEvent(id!, req);
@@ -66,6 +68,9 @@ export default function EventFormPage() {
           </Field>
           <Field label="URL da imagem *">
             <input value={imageUrl} onChange={e => setImageUrl(e.target.value)} required style={input} placeholder="https://..." disabled={loading} />
+          </Field>
+          <Field label="Link externo (opcional)">
+            <input value={externalLink} onChange={e => setExternalLink(e.target.value)} style={input} placeholder="https://..." disabled={loading} />
           </Field>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
