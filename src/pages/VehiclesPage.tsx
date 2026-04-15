@@ -112,6 +112,7 @@ export default function VehiclesPage() {
                 <th style={th}>Marca</th>
                 <th style={{ ...th, width: 72 }}>Ano</th>
                 <th style={th}>Categoria</th>
+                <th style={{ ...th, width: 96 }}>QR Code</th>
                 <th style={{ ...th, width: 148 }}>Ações</th>
               </tr>
             </thead>
@@ -125,6 +126,11 @@ export default function VehiclesPage() {
                   <td style={{ ...td, color: 'rgba(255,255,255,0.45)' }}>{v.brand}</td>
                   <td style={{ ...td, color: 'rgba(255,255,255,0.45)' }}>{v.year}</td>
                   <td style={td}><span style={badge}>{CATEGORY_LABELS[v.category] ?? v.category}</span></td>
+                  <td style={td}>
+                    {v.qrCodeImageUrl
+                      ? <span style={qrBadgeOk}>✓ Gerado</span>
+                      : <span style={qrBadgePending}>Pendente</span>}
+                  </td>
                   <td style={td}>
                     <div style={actionsCell}>
                       <button onClick={() => navigate(`/vehicles/${v.id}/edit`, { state: { vehicle: v } })} style={btnEdit}>
@@ -181,3 +187,5 @@ const imgCell: React.CSSProperties = { position: 'relative', display: 'inline-fl
 const thumbImg: React.CSSProperties = { width: 60, height: 44, objectFit: 'cover', borderRadius: 3, border: '1px solid rgba(255,255,255,0.1)', display: 'block' };
 const imgBadge: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: '#D4A843', background: 'rgba(212,168,67,0.12)', borderRadius: 3, padding: '1px 5px' };
 const imgPlaceholder: React.CSSProperties = { width: 60, height: 44, borderRadius: 3, border: '1px dashed rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' };
+const qrBadgeOk: React.CSSProperties = { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 3, padding: '3px 9px', fontSize: 11, color: '#22c55e', fontWeight: 600, letterSpacing: 0.3, whiteSpace: 'nowrap' };
+const qrBadgePending: React.CSSProperties = { background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 3, padding: '3px 9px', fontSize: 11, color: 'rgba(255,255,255,0.25)', fontWeight: 500, letterSpacing: 0.3, whiteSpace: 'nowrap' };
