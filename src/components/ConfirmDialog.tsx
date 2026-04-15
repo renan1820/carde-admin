@@ -1,17 +1,18 @@
 interface Props {
   message: string;
+  confirmLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export default function ConfirmDialog({ message, onConfirm, onCancel }: Props) {
+export default function ConfirmDialog({ message, confirmLabel = 'Confirmar', onConfirm, onCancel }: Props) {
   return (
     <div style={overlay}>
       <div style={box}>
         <p style={msg}>{message}</p>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button onClick={onCancel} style={btnSecondary}>Cancelar</button>
-          <button onClick={onConfirm} style={btnDanger}>Excluir</button>
+          <button onClick={onConfirm} style={btnDanger}>{confirmLabel}</button>
         </div>
       </div>
     </div>

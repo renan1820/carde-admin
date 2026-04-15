@@ -2,23 +2,25 @@ import { useState } from 'react';
 import type { VehicleQrCode } from '../types';
 import { generateVehicleQrCode } from '../api/vehicles';
 import Spinner from './Spinner';
+import ConfirmDialog from './ConfirmDialog';
 
 interface Props {
   vehicleId: string;
-  initialQrCode: VehicleQrCode | null;
+  qrCode: VehicleQrCode | null;
+  onQrCodeChange: (qr: VehicleQrCode) => void;
 }
 
-export default function VehicleQrCodeSection({ vehicleId, initialQrCode }: Props) {
-  const [qrCode, setQrCode] = useState<VehicleQrCode | null>(initialQrCode);
+export default function VehicleQrCodeSection({ vehicleId, qrCode, onQrCodeChange }: Props) {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+  const [showConfirm, setShowConfirm] = useState(false);
 
   async function handleGenerate() {
     setGenerating(true);
     setError('');
     try {
       const generated = await generateVehicleQrCode(vehicleId);
-      setQrCode(generated);
+      onQrCodeChange(generated);
     } catch {
       setError('Erro ao gerar QR Code. Tente novamente.');
     } finally {
@@ -46,6 +48,15 @@ export default function VehicleQrCodeSection({ vehicleId, initialQrCode }: Props
 
       {error && <p style={errorStyle}>{error}</p>}
 
+      {showConfirm && (
+        <ConfirmDialog
+          message="Ao trocar o QR Code, o anterior deixará de funcionar. Deseja continuar?"
+          confirmLabel="Substituir"
+          onConfirm={() => { setShowConfirm(false); handleGenerate(); }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+
       {!qrCode ? (
         <div>
           <p style={hintStyle}>QR Code ainda não gerado para este veículo.</p>
@@ -63,14 +74,28 @@ export default function VehicleQrCodeSection({ vehicleId, initialQrCode }: Props
           </button>
         </div>
       ) : (
-        <div style={qrWrap}>
-          <img src={qrCode.imageUrl} alt="QR Code do veículo" style={qrImg} />
-          <div style={qrMeta}>
-            <p style={qrValueText}>{qrCode.qrValue}</p>
-            <button type="button" onClick={handleDownload} style={btnDownload}>
-              ↓ Baixar QR Code
-            </button>
+        <div>
+          <div style={qrWrap}>
+            <img src={qrCode.imageUrl} alt="QR Code do veículo" style={qrImg} />
+            <div style={qrMeta}>
+              <p style={qrValueText}>{qrCode.qrValue}</p>
+              <button type="button" onClick={handleDownload} style={btnDownload}>
+                ↓ Baixar QR Code
+              </button>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowConfirm(true)}
+            disabled={generating}
+            style={{ ...btnGenerate, marginTop: 12 }}
+          >
+            {generating ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Spinner size={14} color="#000" /> Gerando...
+              </span>
+            ) : 'Trocar QR Code'}
+          </button>
         </div>
       )}
     </div>

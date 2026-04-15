@@ -184,7 +184,13 @@ export default function VehicleFormPage() {
           </Field>
 
           {/* ── QR Code (apenas em modo edição) ── */}
-          {isEdit && <VehicleQrCodeSection vehicleId={id!} initialQrCode={qrCode} />}
+          {isEdit && (
+            <VehicleQrCodeSection
+              vehicleId={id!}
+              qrCode={qrCode}
+              onQrCodeChange={setQrCode}
+            />
+          )}
 
           {/* ── Specs ── */}
           <div style={sectionWrap}>
