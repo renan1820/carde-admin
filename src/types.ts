@@ -9,6 +9,14 @@ export interface Vehicle {
   imageUrls: string[];
   engineSoundUrl?: string;
   specs: Record<string, string>;
+  qrCodeImageUrl?: string | null;
+}
+
+export interface VehicleQrCode {
+  id: string;
+  vehicleId: string;
+  qrValue: string;
+  imageUrl: string;
 }
 
 export interface MuseumEvent {

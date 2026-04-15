@@ -1,9 +1,10 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
-import { createVehicle, updateVehicle } from '../api/vehicles';
+import { createVehicle, getVehicleQrCode, updateVehicle } from '../api/vehicles';
 import { uploadImage } from '../api/cloudinary';
-import type { Vehicle, VehicleCategory, VehicleRequest } from '../types';
+import type { Vehicle, VehicleCategory, VehicleQrCode, VehicleRequest } from '../types';
 import Spinner from '../components/Spinner';
+import VehicleQrCodeSection from '../components/VehicleQrCodeSection';
 
 const CATEGORIES: VehicleCategory[] = ['car', 'motorcycle', 'truck', 'bus', 'racing', 'classic'];
 const CATEGORY_LABELS: Record<VehicleCategory, string> = {
@@ -35,7 +36,24 @@ export default function VehicleFormPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [qrCode, setQrCode] = useState<VehicleQrCode | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isEdit || !id) return;
+    // Se o veículo já veio com qrCodeImageUrl do estado de navegação, constrói o objeto mínimo
+    if (existing?.qrCodeImageUrl) {
+      setQrCode({
+        id: '',
+        vehicleId: id,
+        qrValue: `https://carde.app/vehicles/${id}`,
+        imageUrl: existing.qrCodeImageUrl,
+      });
+      return;
+    }
+    // Caso contrário busca da API (ex: acesso direto por URL)
+    getVehicleQrCode(id).then(setQrCode).catch(() => {});
+  }, [id, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function addSpec() { setSpecs(s => [...s, { key: '', value: '' }]); }
   function removeSpec(i: number) { setSpecs(s => s.filter((_, idx) => idx !== i)); }
@@ -164,6 +182,9 @@ export default function VehicleFormPage() {
           <Field label="URL do som do motor (opcional)">
             <input value={engineSoundUrl} onChange={e => setEngineSoundUrl(e.target.value)} style={input} placeholder="https://..." disabled={loading} />
           </Field>
+
+          {/* ── QR Code (apenas em modo edição) ── */}
+          {isEdit && <VehicleQrCodeSection vehicleId={id!} initialQrCode={qrCode} />}
 
           {/* ── Specs ── */}
           <div style={sectionWrap}>
