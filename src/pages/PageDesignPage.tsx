@@ -20,6 +20,15 @@ import { reorderEvents, reorderVehicles } from '../api/ordering';
 import type { MuseumEvent, Vehicle } from '../types';
 import Spinner from '../components/Spinner';
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function timeAgo(date: Date): string {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 60) return 'agora mesmo';
+  if (diff < 3600) return `há ${Math.floor(diff / 60)} min`;
+  return `há ${Math.floor(diff / 3600)}h`;
+}
+
 // ─── Drag handle icon ────────────────────────────────────────────────────────
 
 function DragHandle(props: React.HTMLAttributes<HTMLSpanElement>) {
@@ -108,40 +117,44 @@ function VehicleCard({ vehicle, index, handleProps }: { vehicle: Vehicle; index:
 
 function Section<T extends { id: string }>({
   title,
-  subtitle,
   items,
   onDragEnd,
   saving,
   saved,
-  onSave,
+  lastSavedAt,
+  onPublish,
   renderCard,
 }: {
   title: string;
-  subtitle: string;
   items: T[];
   onDragEnd: (event: DragEndEvent) => void;
   saving: boolean;
   saved: boolean;
-  onSave: () => void;
+  lastSavedAt: Date | null;
+  onPublish: () => void;
   renderCard: (item: T, index: number, handleProps: React.HTMLAttributes<HTMLSpanElement>) => React.ReactNode;
 }) {
   const sensors = useSensors(useSensor(PointerSensor));
+
+  const timestampText = lastSavedAt
+    ? `Última publicação: ${timeAgo(lastSavedAt)}`
+    : 'Nunca publicado';
 
   return (
     <div style={sectionBox}>
       <div style={sectionHeader}>
         <div>
           <h2 style={sectionTitle}>{title}</h2>
-          <p style={sectionSubtitle}>{subtitle}</p>
+          <p style={sectionSubtitle}>{timestampText}</p>
         </div>
         <button
-          onClick={onSave}
+          onClick={onPublish}
           disabled={saving}
           style={saving ? { ...saveBtn, opacity: 0.6, cursor: 'not-allowed' } : saveBtn}
         >
           {saving
-            ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner size={14} color="#000" /> Salvando...</span>
-            : saved ? '✓ Ordem salva' : 'Salvar ordem'}
+            ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Spinner size={14} color="#000" /> Publicando...</span>
+            : saved ? '✓ Publicado' : 'Publicar'}
         </button>
       </div>
 
@@ -160,6 +173,26 @@ function Section<T extends { id: string }>({
   );
 }
 
+// ─── Confirmation modal ───────────────────────────────────────────────────────
+
+function ConfirmPublishModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div style={modalOverlay}>
+      <div style={modalBox}>
+        <p style={modalTitle}>Publicar ordem</p>
+        <p style={modalBody}>
+          A nova sequência irá ser exibida no aplicativo em alguns minutos.
+          Deseja continuar?
+        </p>
+        <div style={modalActions}>
+          <button onClick={onCancel} style={modalCancelBtn}>Cancelar</button>
+          <button onClick={onConfirm} style={modalConfirmBtn}>Publicar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PageDesignPage() {
@@ -170,8 +203,13 @@ export default function PageDesignPage() {
 
   const [savingEvents, setSavingEvents] = useState(false);
   const [savedEvents, setSavedEvents] = useState(false);
+  const [lastSavedEventsAt, setLastSavedEventsAt] = useState<Date | null>(null);
+
   const [savingVehicles, setSavingVehicles] = useState(false);
   const [savedVehicles, setSavedVehicles] = useState(false);
+  const [lastSavedVehiclesAt, setLastSavedVehiclesAt] = useState<Date | null>(null);
+
+  const [confirmSection, setConfirmSection] = useState<'events' | 'vehicles' | null>(null);
 
   useEffect(() => {
     Promise.all([listEvents(), listVehicles()])
@@ -208,24 +246,28 @@ export default function PageDesignPage() {
   }
 
   async function saveEventsOrder() {
+    setConfirmSection(null);
     setSavingEvents(true);
     try {
       await reorderEvents(events.map((e, i) => ({ id: e.id, displayOrder: i })));
       setSavedEvents(true);
+      setLastSavedEventsAt(new Date());
     } catch {
-      alert('Erro ao salvar ordem dos eventos. Tente novamente.');
+      alert('Erro ao publicar ordem dos eventos. Tente novamente.');
     } finally {
       setSavingEvents(false);
     }
   }
 
   async function saveVehiclesOrder() {
+    setConfirmSection(null);
     setSavingVehicles(true);
     try {
       await reorderVehicles(vehicles.map((v, i) => ({ id: v.id, displayOrder: i })));
       setSavedVehicles(true);
+      setLastSavedVehiclesAt(new Date());
     } catch {
-      alert('Erro ao salvar ordem dos veículos. Tente novamente.');
+      alert('Erro ao publicar ordem dos veículos. Tente novamente.');
     } finally {
       setSavingVehicles(false);
     }
@@ -245,6 +287,13 @@ export default function PageDesignPage() {
 
   return (
     <div style={page}>
+      {confirmSection && (
+        <ConfirmPublishModal
+          onConfirm={confirmSection === 'events' ? saveEventsOrder : saveVehiclesOrder}
+          onCancel={() => setConfirmSection(null)}
+        />
+      )}
+
       <div style={pageHeader}>
         <div>
           <h1 style={pageTitle}>Page Design</h1>
@@ -267,12 +316,12 @@ export default function PageDesignPage() {
 
       <Section
         title="Carrossel de Eventos"
-        subtitle="Arraste para reordenar a sequência no carrossel do app."
         items={events}
         onDragEnd={handleEventDragEnd}
         saving={savingEvents}
         saved={savedEvents}
-        onSave={saveEventsOrder}
+        lastSavedAt={lastSavedEventsAt}
+        onPublish={() => setConfirmSection('events')}
         renderCard={(event, index, handleProps) => (
           <EventCard event={event} index={index} handleProps={handleProps} />
         )}
@@ -280,12 +329,12 @@ export default function PageDesignPage() {
 
       <Section
         title="Acervo — Carrossel de Veículos"
-        subtitle="Arraste para reordenar a sequência no carrossel do app."
         items={vehicles}
         onDragEnd={handleVehicleDragEnd}
         saving={savingVehicles}
         saved={savedVehicles}
-        onSave={saveVehiclesOrder}
+        lastSavedAt={lastSavedVehiclesAt}
+        onPublish={() => setConfirmSection('vehicles')}
         renderCard={(vehicle, index, handleProps) => (
           <VehicleCard vehicle={vehicle} index={index} handleProps={handleProps} />
         )}
@@ -312,7 +361,7 @@ const pageSubtitle: React.CSSProperties = {
   fontSize: 13, color: 'rgba(255,255,255,0.4)', margin: 0,
 };
 
-// Phone mockup (preview rápido)
+// Phone mockup
 const phoneMockup: React.CSSProperties = {
   background: '#111', border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 16, padding: '12px 14px', width: 180,
@@ -350,10 +399,10 @@ const sectionHeader: React.CSSProperties = {
 const sectionTitle: React.CSSProperties = {
   fontFamily: "'Big Shoulders Display', cursive",
   fontSize: 20, fontWeight: 700, letterSpacing: 0.5,
-  color: '#fff', margin: '0 0 2px',
+  color: '#fff', margin: '0 0 4px',
 };
 const sectionSubtitle: React.CSSProperties = {
-  fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0,
+  fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: 0,
 };
 const saveBtn: React.CSSProperties = {
   padding: '9px 20px', background: '#D4A843', color: '#000',
@@ -414,4 +463,41 @@ const badgeLink: React.CSSProperties = {
   fontSize: 10, fontWeight: 700, letterSpacing: 0.8,
   padding: '2px 6px', borderRadius: 3,
   background: 'rgba(99,179,237,0.15)', color: '#63b3ed',
+};
+
+// Modal
+const modalOverlay: React.CSSProperties = {
+  position: 'fixed', inset: 0,
+  background: 'rgba(0,0,0,0.7)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  zIndex: 1000,
+};
+const modalBox: React.CSSProperties = {
+  background: '#111', border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 10, padding: '28px 32px', width: 360,
+};
+const modalTitle: React.CSSProperties = {
+  fontFamily: "'IBM Plex Sans', sans-serif",
+  fontSize: 16, fontWeight: 600, color: '#fff',
+  margin: '0 0 10px',
+};
+const modalBody: React.CSSProperties = {
+  fontFamily: "'IBM Plex Sans', sans-serif",
+  fontSize: 14, color: 'rgba(255,255,255,0.55)',
+  margin: '0 0 24px', lineHeight: 1.5,
+};
+const modalActions: React.CSSProperties = {
+  display: 'flex', justifyContent: 'flex-end', gap: 10,
+};
+const modalCancelBtn: React.CSSProperties = {
+  background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
+  color: 'rgba(255,255,255,0.6)', borderRadius: 6,
+  padding: '8px 18px', cursor: 'pointer', fontSize: 13,
+  fontFamily: "'IBM Plex Sans', sans-serif",
+};
+const modalConfirmBtn: React.CSSProperties = {
+  background: '#D4A843', border: 'none',
+  color: '#000', borderRadius: 6,
+  padding: '8px 20px', cursor: 'pointer', fontSize: 13, fontWeight: 700,
+  fontFamily: "'IBM Plex Sans', sans-serif",
 };
