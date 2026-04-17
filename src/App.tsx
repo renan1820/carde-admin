@@ -7,6 +7,7 @@ import VehicleFormPage from './pages/VehicleFormPage';
 import EventsPage from './pages/EventsPage';
 import EventFormPage from './pages/EventFormPage';
 import PageDesignPage from './pages/PageDesignPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 function ProtectedRoute({ children, isAuthenticated }: { children: React.ReactNode; isAuthenticated: boolean }) {
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/events/new" element={<EventFormPage />} />
           <Route path="/events/:id/edit" element={<EventFormPage />} />
           <Route path="/page-design" element={<PageDesignPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/vehicles" replace />} />
       </Routes>
