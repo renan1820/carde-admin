@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getNotificationLogs, sendNotification, NotificationLog } from '../api/notifications';
+import { getNotificationLogs, sendNotification, type NotificationLog } from '../api/notifications';
 
 export default function NotificationsPage() {
   const [title, setTitle] = useState('');
